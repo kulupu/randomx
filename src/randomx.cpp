@@ -36,13 +36,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cpu.hpp"
 #include <cassert>
 #include <limits>
+#include <cfenv>
 
 extern "C" {
 
 	randomx_flags randomx_get_flags() {
 		randomx_flags flags = RANDOMX_HAVE_COMPILER ? RANDOMX_FLAG_JIT : RANDOMX_FLAG_DEFAULT;
 		randomx::Cpu cpu;
-#ifdef __OpenBSD__
+#ifdef RANDOMX_FORCE_SECURE
 		if (flags == RANDOMX_FLAG_JIT) {
 			flags |= RANDOMX_FLAG_SECURE;
 		}
@@ -328,7 +329,7 @@ extern "C" {
 	void randomx_vm_set_cache(randomx_vm *machine, randomx_cache* cache) {
 		assert(machine != nullptr);
 		assert(cache != nullptr && cache->isInitialized());
-		if (machine->cacheKey != cache->cacheKey) {
+		if (machine->cacheKey != cache->cacheKey || machine->getMemory() != cache->memory) {
 			machine->setCache(cache);
 			machine->cacheKey = cache->cacheKey;
 		}
@@ -349,6 +350,8 @@ extern "C" {
 		assert(machine != nullptr);
 		assert(inputSize == 0 || input != nullptr);
 		assert(output != nullptr);
+		fenv_t fpstate;
+		fegetenv(&fpstate);
 		alignas(16) uint64_t tempHash[8];
 		int blakeResult = blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
 		assert(blakeResult == 0);
@@ -361,6 +364,7 @@ extern "C" {
 		}
 		machine->run(&tempHash);
 		machine->getFinalResult(output, RANDOMX_HASH_SIZE);
+		fesetenv(&fpstate);
 	}
 
 	void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize) {
