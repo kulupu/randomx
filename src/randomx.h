@@ -120,6 +120,16 @@ RANDOMX_EXPORT randomx_cache *randomx_alloc_cache(randomx_flags flags);
 RANDOMX_EXPORT void randomx_init_cache(randomx_cache *cache, const void *key, size_t keySize);
 
 /**
+ * Returns a pointer to the internal memory buffer of the cache structure. The size
+ * of the internal memory buffer is RANDOMX_ARGON_MEMORY KiB.
+ *
+ * @param cache is a pointer to a previously allocated randomx_cache structure. Must not be NULL.
+ *
+ * @return Pointer to the internal memory buffer of the cache structure.
+*/
+RANDOMX_EXPORT void *randomx_get_cache_memory(randomx_cache *cache);
+
+/**
  * Releases all memory occupied by the randomx_cache structure.
  *
  * @param cache is a pointer to a previously allocated randomx_cache structure.
@@ -152,7 +162,7 @@ RANDOMX_EXPORT unsigned long randomx_dataset_item_count(void);
  *
  * @param dataset is a pointer to a previously allocated randomx_dataset structure. Must not be NULL.
  * @param cache is a pointer to a previously allocated and initialized randomx_cache structure. Must not be NULL.
- * @param startItem is the item number where intialization should start.
+ * @param startItem is the item number where initialization should start.
  * @param itemCount is the number of items that should be initialized.
 */
 RANDOMX_EXPORT void randomx_init_dataset(randomx_dataset *dataset, randomx_cache *cache, unsigned long startItem, unsigned long itemCount);
@@ -259,6 +269,17 @@ RANDOMX_EXPORT void randomx_calculate_hash(randomx_vm *machine, const void *inpu
 RANDOMX_EXPORT void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize);
 RANDOMX_EXPORT void randomx_calculate_hash_next(randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output);
 RANDOMX_EXPORT void randomx_calculate_hash_last(randomx_vm* machine, void* output);
+
+/**
+ * Calculate a RandomX commitment from a RandomX hash and its input.
+ *
+ * @param input is a pointer to memory that was hashed. Must not be NULL.
+ * @param inputSize is the number of bytes in the input.
+ * @param hash_in is the output from randomx_calculate_hash* (RANDOMX_HASH_SIZE bytes).
+ * @param com_out is a pointer to memory where the commitment will be stored. Must not
+ *        be NULL and at least RANDOMX_HASH_SIZE bytes must be available for writing.
+*/
+RANDOMX_EXPORT void randomx_calculate_commitment(const void* input, size_t inputSize, const void* hash_in, void* com_out);
 
 #if defined(__cplusplus)
 }
